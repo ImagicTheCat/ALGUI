@@ -1,0 +1,6 @@
+
+= ALGUI
+
+**A**bstract **L**ua **G**raphical **U**ser **I**nterface is a Lua library which aims to be an embeddable, flexible and generic GUI.
+
+It depends on the https://github.com/ImagicTheCat/Luaoop[Luaoop] library.
