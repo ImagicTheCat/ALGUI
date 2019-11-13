@@ -2,11 +2,9 @@ local class = require("Luaoop").class
 
 local Renderer = class("Renderer")
 
-function Renderer:render(gui)
-  gui:preRender()
-end
+-- METHODS
 
-function Renderer:renderWidget(widget)
+function Renderer:render(gui)
 end
 
 return Renderer
