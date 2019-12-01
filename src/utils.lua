@@ -1,3 +1,6 @@
+-- https://github.com/ImagicTheCat/ALGUI
+-- MIT license (see LICENSE)
+
 local utils = {}
 
 -- return rect intersection of two rects

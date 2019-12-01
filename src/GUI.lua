@@ -1,3 +1,6 @@
+-- https://github.com/ImagicTheCat/ALGUI
+-- MIT license (see LICENSE)
+
 local class = require("Luaoop").class
 local Widget = require("ALGUI.Widget")
 
