@@ -161,20 +161,23 @@ end
 
 -- trigger "key_press" on GUI and focused widget
 function eGUI:triggerKeyPress(keycode, scancode, repeated)
+  local focus = self.focus
   self:trigger("key_press", keycode, scancode, repeated)
-  if self.focus then self.focus:trigger("key_press", keycode, scancode, repeated) end
+  if focus then focus:trigger("key_press", keycode, scancode, repeated) end
 end
 
 -- trigger "key_release" on GUI and focused widget
 function eGUI:triggerKeyRelease(keycode, scancode)
+  local focus = self.focus
   self:trigger("key_release", keycode, scancode)
-  if self.focus then self.focus:trigger("key_release", keycode, scancode) end
+  if focus then focus:trigger("key_release", keycode, scancode) end
 end
 
 -- trigger "text_input" on GUI and focused widget
 function eGUI:triggerTextInput(text)
+  local focus = self.focus
   self:trigger("text_input", text)
-  if self.focus then self.focus:trigger("text_input", text) end
+  if focus then focus:trigger("text_input", text) end
 end
 
 return eGUI
