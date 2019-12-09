@@ -52,8 +52,8 @@ local function update_parent(self, parent)
     self.draw_dirty = nil
   end
 
-  if self.parent ~= old_parent then self:trigger("parent_change", old_parent) end
-  if self.gui ~= old_gui then self:trigger("gui_change", old_gui) end
+  if self.parent ~= old_parent then self:trigger("parent-change", old_parent) end
+  if self.gui ~= old_gui then self:trigger("gui-change", old_gui) end
 
   for child in pairs(self.widgets) do update_parent(child, self) end
 end

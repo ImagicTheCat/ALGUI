@@ -54,9 +54,9 @@ end
 -- widget: can be nil
 function eGUI:setFocus(widget)
   if self.focus ~= widget then
-    if self.focus then self.focus:trigger("focus_change", false) end
+    if self.focus then self.focus:trigger("focus-change", false) end
     self.focus = widget
-    if widget then widget:trigger("focus_change", true) end
+    if widget then widget:trigger("focus-change", true) end
   end
 end
 
@@ -73,7 +73,7 @@ function eGUI:triggerPointerClick(id, x, y, code, n)
   local list = {}
   get_overed_widgets(list, self, x, y)
   for _, entry in ipairs(list) do
-    entry[1]:trigger("pointer_click", id, entry[2], entry[3], code, n)
+    entry[1]:trigger("pointer-click", id, entry[2], entry[3], code, n)
   end
 end
 
@@ -90,7 +90,7 @@ function eGUI:triggerPointerPress(id, x, y, code)
 
   -- trigger event
   for _, entry in ipairs(list) do
-    entry[1]:trigger("pointer_press", id, entry[2], entry[3], code)
+    entry[1]:trigger("pointer-press", id, entry[2], entry[3], code)
   end
 end
 
@@ -105,13 +105,13 @@ function eGUI:triggerPointerRelease(id, x, y, code)
   if pressed then
     -- trigger release event
     for widget in pairs(pressed) do
-      widget:trigger("pointer_release", id, code)
+      widget:trigger("pointer-release", id, code)
     end
 
     -- trigger click event
     for _, entry in ipairs(list) do
       if pressed[entry[1]] then
-        entry[1]:trigger("pointer_click", id, entry[2], entry[3], code, 1)
+        entry[1]:trigger("pointer-click", id, entry[2], entry[3], code, 1)
       end
     end
 
@@ -125,7 +125,7 @@ function eGUI:triggerPointerWheel(id, x, y, amount)
   local list = {}
   get_overed_widgets(list, self, x, y)
   for _, entry in ipairs(list) do
-    entry[1]:trigger("pointer_wheel", id, entry[2], entry[3], amount)
+    entry[1]:trigger("pointer-wheel", id, entry[2], entry[3], amount)
   end
 end
 
@@ -138,7 +138,7 @@ function eGUI:triggerPointerMove(id, x, y, dx, dy)
 
   -- trigger move event
   for _, entry in ipairs(list) do
-    entry[1]:trigger("pointer_move", id, entry[2], entry[3], dx*entry[4], dy*entry[4])
+    entry[1]:trigger("pointer-move", id, entry[2], entry[3], dx*entry[4], dy*entry[4])
   end
 
   -- trigger enter/leave events
@@ -148,12 +148,12 @@ function eGUI:triggerPointerMove(id, x, y, dx, dy)
 
   --- enter
   for widget in pairs(overed) do
-    if not old_overed[widget] then widget:trigger("pointer_enter", id) end
+    if not old_overed[widget] then widget:trigger("pointer-enter", id) end
   end
 
   --- leave
   for widget in pairs(old_overed) do
-    if not overed[widget] then widget:trigger("pointer_leave", id) end
+    if not overed[widget] then widget:trigger("pointer-leave", id) end
   end
 
   self.pointers_overed[id] = overed
@@ -162,22 +162,22 @@ end
 -- trigger "key_press" on GUI and focused widget
 function eGUI:triggerKeyPress(keycode, scancode, repeated)
   local focus = self.focus
-  self:trigger("key_press", keycode, scancode, repeated)
-  if focus then focus:trigger("key_press", keycode, scancode, repeated) end
+  self:trigger("key-press", keycode, scancode, repeated)
+  if focus then focus:trigger("key-press", keycode, scancode, repeated) end
 end
 
 -- trigger "key_release" on GUI and focused widget
 function eGUI:triggerKeyRelease(keycode, scancode)
   local focus = self.focus
-  self:trigger("key_release", keycode, scancode)
-  if focus then focus:trigger("key_release", keycode, scancode) end
+  self:trigger("key-release", keycode, scancode)
+  if focus then focus:trigger("key-release", keycode, scancode) end
 end
 
 -- trigger "text_input" on GUI and focused widget
 function eGUI:triggerTextInput(text)
   local focus = self.focus
-  self:trigger("text_input", text)
-  if focus then focus:trigger("text_input", text) end
+  self:trigger("text-input", text)
+  if focus then focus:trigger("text-input", text) end
 end
 
 return eGUI

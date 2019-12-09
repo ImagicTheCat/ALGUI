@@ -20,21 +20,21 @@ function love.load()
   end
 
   local gui_drag = false
-  gui:listen("pointer_press", function(self, id, x, y, code)
+  gui:listen("pointer-press", function(self, id, x, y, code)
     gui_drag = true
   end)
 
-  gui:listen("pointer_release", function(self, id, x, y, code)
+  gui:listen("pointer-release", function(self, id, x, y, code)
     gui_drag = false
   end)
 
-  gui:listen("pointer_move", function(self, id, x, y, dx, dy)
+  gui:listen("pointer-move", function(self, id, x, y, dx, dy)
     if gui_drag then
       self:setInnerShift(self.ix+dx/self.zoom, self.iy+dy/self.zoom)
     end
   end)
 
-  gui:listen("pointer_wheel", function(self, id, x, y, amount)
+  gui:listen("pointer-wheel", function(self, id, x, y, amount)
     gui:setInnerZoom(gui.zoom*math.pow(1.25,amount))
   end)
 
@@ -45,7 +45,7 @@ function love.load()
   for i=1,1500 do
     local button = widgets.Button({{1,1,1}, i})
     button:setSize(100+math.random(-20,20),25+math.random(-5,5))
-    button:listen("pointer_click", button_click)
+    button:listen("pointer-click", button_click)
 
     flow:add(button)
   end

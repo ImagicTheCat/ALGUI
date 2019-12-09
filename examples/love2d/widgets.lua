@@ -15,8 +15,8 @@ function Button:__construct(coloredtext)
   Widget.__construct(self)
   self.text = love.graphics.newText(love.graphics.getFont())
   self:setText(coloredtext)
-  self:listen("pointer_enter", e_button_pointer_enter)
-  self:listen("pointer_leave", e_button_pointer_leave)
+  self:listen("pointer-enter", e_button_pointer_enter)
+  self:listen("pointer-leave", e_button_pointer_leave)
 end
 
 function Button:setText(coloredtext)
