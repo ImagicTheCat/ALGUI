@@ -20,7 +20,6 @@ function GUI:__construct()
   self.gui = self
   self.layout_dirties = {} -- map of widget
   self.view_dirties = {} -- map of widget
-  self.inner_dirties = {} -- map of widget
   self.draw_dirties = {} -- map of widget
 end
 
@@ -71,9 +70,6 @@ function GUI:update()
       end
     end
   end
-
-  -- inner dirties
-  for widget in pairs(self.inner_dirties) do widget:updateInner() end
 
   -- draw dirties
   for widget in pairs(self.draw_dirties) do widget:updateDraw() end

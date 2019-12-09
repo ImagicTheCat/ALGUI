@@ -29,19 +29,27 @@ local function update_parent(self, parent)
   self.parent = parent
   self.depth = (parent and parent.depth+1 or 0)
 
-  if self.gui then -- unmark dirties
+  if self.gui then -- save/unmark dirties from old GUI
+    self.layout_dirty = self.gui.layout_dirties[self]
+    self.view_dirty = self.gui.view_dirties[self]
+    self.draw_dirty = self.gui.draw_dirties[self]
+
     self.gui.layout_dirties[self] = nil
     self.gui.view_dirties[self] = nil
-    self.gui.inner_dirties[self] = nil
     self.gui.draw_dirties[self] = nil
   end
 
   local old_gui = self.gui
   self.gui = (parent and parent.gui) -- new GUI
 
-  if not self.gui then
-    -- cleanup GUI related data
-    self.draw_list = nil
+  if self.gui then -- restore/mark dirties for new GUI
+    self.gui.layout_dirties[self] = self.layout_dirty
+    self.gui.view_dirties[self] = self.view_dirty
+    self.gui.draw_dirties[self] = self.draw_dirty
+
+    self.layout_dirty = nil
+    self.view_dirty = nil
+    self.draw_dirty = nil
   end
 
   if self.parent ~= old_parent then self:trigger("parent_change", old_parent) end
@@ -58,13 +66,31 @@ function Widget:__construct()
   self.visible = true
   self.vx, self.vy, self.vw, self.vh = 0, 0, 0, 0 -- view (visible relative area of the widget)
   self.ivx, self.ivy, self.ivw, self.ivh = 0, 0, 0, 0 -- inner view (visible relative area of the widget)
-  self.iw, self.ih = 0, 0 -- inner content width/height
   self.ix, self.iy = 0, 0 -- inner content shift (inner space)
   self.zoom = 1 -- inner content zoom
   self.z_counter = 0
   self.depth = 0
   self.widgets = {}
   self.events_listeners = {}
+
+  -- self.draw_list -- nil: empty, table: list of widgets to draw in order
+  -- self.iz (widget implicit z)
+  -- self.parent
+  -- self.gui
+  -- self.layout_dirty, self.view_dirty, self.draw_dirty -- dirty flags
+end
+
+-- layout, view, draw: truthy or falsy (flags)
+function Widget:markDirty(layout, view, draw)
+  if self.gui then -- mark on GUI
+    if layout then self.gui.layout_dirties[self] = true end
+    if view then self.gui.view_dirties[self] = true end
+    if draw then self.gui.draw_dirties[self] = true end
+  else -- mark on self
+    if layout then self.layout_dirty = true end
+    if view then self.view_dirty = true end
+    if draw then self.draw_dirty = true end
+  end
 end
 
 function Widget:add(widget)
@@ -74,13 +100,9 @@ function Widget:add(widget)
 
   self.widgets[widget] = true
   update_parent(widget, self) -- set parent
-  if self.gui then -- mark dirty
-    self.gui.layout_dirties[self] = true
-    self.gui.inner_dirties[self] = true
-    self.gui.draw_dirties[self] = true
-    self.gui.view_dirties[widget] = true
-    self.gui.layout_dirties[widget] = true
-  end
+
+  self:markDirty(true,nil,true) -- layout, draw
+  widget:markDirty(true,true,nil) -- layout, view
 end
 
 function Widget:remove(widget)
@@ -88,11 +110,7 @@ function Widget:remove(widget)
     self.widgets[widget] = nil
     update_parent(widget) -- remove parent
 
-    if self.gui then -- mark dirty
-      self.gui.layout_dirties[self] = true
-      self.gui.inner_dirties[self] = true
-      self.gui.draw_dirties[self] = true
-    end
+    self:markDirty(true,nil,true) -- layout, draw
   end
 end
 
@@ -133,26 +151,19 @@ function Widget:trigger(event, ...)
 end
 
 function Widget:setPosition(x,y)
-  if self.gui and (self.x ~= x or self.y ~= y) then -- changed
-    self.gui.view_dirties[self] = true
-    if self.parent then
-      self.gui.layout_dirties[self.parent] = true
-      self.gui.inner_dirties[self.parent] = true
-      self.gui.draw_dirties[self.parent] = true
-    end
+  if self.parent and self.x ~= x or self.y ~= y then -- changed
+    self:markDirty(nil,true,nil) -- view
+    self.parent:markDirty(true,nil,true) -- layout, draw
   end
 
   self.x, self.y = x,y
 end
 
 function Widget:setSize(w,h)
-  if self.gui and (self.w ~= w or self.h ~= h) then -- changed
-    self.gui.view_dirties[self] = true
-    self.gui.layout_dirties[self] = true
+  if self.w ~= w or self.h ~= h then -- changed
+    self:markDirty(true,true,nil) -- layout, view
     if self.parent then
-      self.gui.layout_dirties[self.parent] = true
-      self.gui.inner_dirties[self.parent] = true
-      self.gui.draw_dirties[self.parent] = true
+      self.parent:markDirty(true,nil,true) -- layout, draw
     end
   end
 
@@ -160,40 +171,40 @@ function Widget:setSize(w,h)
 end
 
 function Widget:setZ(z)
-  if self.gui and self.z ~= z and self.parent then -- changed
-    self.gui.draw_dirties[self.parent] = true
+  if self.parent and self.z ~= z then -- changed
+    self.parent:markDirty(nil,nil,true) -- draw
   end
 
   self.z = z
 end
 
 function Widget:setVisible(visible)
-  if self.gui and self.visible ~= visible and self.parent then -- changed
-    self.gui.draw_dirties[self.parent] = true
+  if self.parent and self.visible ~= visible then -- changed
+    self.parent:markDirty(nil,nil,true) -- draw
   end
 
   self.visible = visible
 end
 
 function Widget:setInnerZoom(zoom)
-  if self.gui and self.zoom ~= zoom then -- changed
-    self.gui.view_dirties[self] = true
+  if self.zoom ~= zoom then -- changed
+    self:markDirty(nil,true,nil) -- view
   end
 
   self.zoom = zoom
 end
 
 function Widget:setInnerShift(x,y)
-  if self.gui and (self.ix ~= x or self.iy ~= y) then -- changed
-    self.gui.view_dirties[self] = true
+  if self.ix ~= x or self.iy ~= y then -- changed
+    self:markDirty(nil,true,nil) -- view
   end
 
   self.ix, self.iy = x,y
 end
 
--- mark layout for update
+-- (alias) mark layout for update
 function Widget:markLayoutDirty()
-  if self.gui then self.gui.layout_dirties[self] = true end
+  self:markDirty(true,nil,nil)
 end
 
 -- called when the widget layout should be updated
@@ -210,7 +221,7 @@ end
 function Widget:updateLayout(w,h)
 end
 
--- update view data (pre-render step #1)
+-- update view data
 -- (internal)
 -- (sparse recursion)
 function Widget:updateView()
@@ -241,22 +252,7 @@ function Widget:updateView()
   end
 end
 
--- update inner data (pre-render step #2)
--- (internal)
-function Widget:updateInner()
-  self.gui.inner_dirties[self] = nil -- unmark dirty
-
-  -- compute inner data
-  --- width/height
-  local iw, ih = 0, 0
-  for child in pairs(self.widgets) do
-    iw = math.max(iw, child.x+child.w)
-    ih = math.max(ih, child.y+child.h)
-  end
-  self.iw, self.ih = iw, ih
-end
-
--- update draw data (pre-render step #3)
+-- update draw data
 -- (internal)
 function Widget:updateDraw()
   self.gui.draw_dirties[self] = nil -- unmark dirty
