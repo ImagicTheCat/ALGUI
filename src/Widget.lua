@@ -202,6 +202,25 @@ function Widget:setInnerShift(x,y)
   self.ix, self.iy = x,y
 end
 
+-- compute absolute (shallowest parent/GUI) transform (recursive)
+-- useful to compute display area for non-display logic
+-- (may require to update the GUI as any display dependent features)
+--
+-- return x,y,scale or nil if not in a GUI
+--- x,y: absolute position
+--- scale: absolute scale
+function Widget:computeTransform()
+  local x,y,scale = self.x,self.y,1
+  local parent = self.parent
+  while parent do
+    scale = parent.zoom*scale
+    x,y = parent.x+(parent.ix+x)*parent.zoom, parent.y+(parent.iy+y)*parent.zoom
+    parent = parent.parent
+  end
+
+  return x,y,scale
+end
+
 -- (alias) mark layout for update
 function Widget:markLayoutDirty()
   self:markDirty(true,nil,nil)
