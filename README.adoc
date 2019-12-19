@@ -46,6 +46,6 @@ Layouts are updated recursively; when updating its layout, each widget can call 
 
 NOTE: Layouts are updated when the widgets' size or content is updated.
 
-CAUTION: Layouts are built from the shallower to the deepest widgets; widgets shouldn't base their layout on the parent data.
+CAUTION: Layouts are built from the shallowest to the deepest widgets; widgets shouldn't base their layout on the parent data.
 
 WARNING: Wrongly designed layouts may cause an infinite loop.
