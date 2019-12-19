@@ -44,11 +44,6 @@ function eGUI:__construct()
   self.pointers_overed = {} -- map of id => map of widgets
 end
 
--- should return time since an arbitrary referential
-function eGUI:getTime()
-  return 0
-end
-
 -- set GUI focus
 -- trigger "focus_change" on old/new focused widgets
 -- widget: can be nil
@@ -61,11 +56,6 @@ function eGUI:setFocus(widget)
 end
 
 -- some event triggers
-
--- trigger "tick" on GUI
-function eGUI:triggerTick(dt)
-  self:trigger("tick", dt)
-end
 
 -- trigger "pointer_click" on all overed widgets
 function eGUI:triggerPointerClick(id, x, y, code, n)

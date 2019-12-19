@@ -13,6 +13,8 @@ endif::[]
 
 It depends on the https://github.com/ImagicTheCat/Luaoop[Luaoop] library.
 
+TIP: If your GUI relies on time and you don't already have some kind of scheduler, https://github.com/ImagicTheCat/ELScheduler[ELScheduler] may interest you.
+
 == Concepts
 
 GUI:: root widget

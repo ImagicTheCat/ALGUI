@@ -15,10 +15,6 @@ function love.load()
   gui:setSize(love.graphics.getDimensions())
   renderer = Renderer()
 
-  function gui:getTime()
-    return love.timer.getTime()
-  end
-
   local gui_drag = false
   gui:listen("pointer-press", function(self, id, x, y, code)
     gui_drag = true
@@ -51,10 +47,6 @@ function love.load()
   end
 
   gui:add(flow)
-end
-
-function love.update(dt)
-  gui:triggerTick(dt)
 end
 
 function love.draw()
