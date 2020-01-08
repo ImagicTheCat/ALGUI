@@ -151,7 +151,7 @@ function Widget:trigger(event, ...)
 end
 
 function Widget:setPosition(x,y)
-  if self.parent and self.x ~= x or self.y ~= y then -- changed
+  if self.parent and (self.x ~= x or self.y ~= y) then -- changed
     self:markDirty(nil,true,nil) -- view
     self.parent:markDirty(true,nil,true) -- layout, draw
   end
