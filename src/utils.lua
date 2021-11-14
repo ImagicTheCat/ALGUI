@@ -1,5 +1,5 @@
 -- https://github.com/ImagicTheCat/ALGUI
--- MIT license (see LICENSE)
+-- MIT license (see LICENSE or src/GUI.lua)
 
 local utils = {}
 
