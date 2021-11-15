@@ -1,3 +1,5 @@
+package.path = "src/?.lua;"..package.path
+
 class = require("Luaoop").class
 local GUI = require("ALGUI.ext.GUI")
 local Renderer = require("Renderer")

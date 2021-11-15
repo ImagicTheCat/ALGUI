@@ -1,5 +1,5 @@
 -- https://github.com/ImagicTheCat/ALGUI
--- MIT license (see LICENSE or src/GUI.lua)
+-- MIT license (see LICENSE or src/ALGUI/GUI.lua)
 
 local class = require("Luaoop").class
 local Renderer = require("ALGUI.Renderer")
