@@ -9,24 +9,26 @@ endif::[]
 :toc: left
 :toclevels: 5
 
-**A**bstract **L**ua **G**raphical **U**ser **I**nterface is a Lua library which aims to be an embeddable, flexible and simple GUI system.
+**A**bstract **L**ua **G**raphical **U**ser **I**nterface is a Lua library which aims to be a simple and embeddable GUI system.
 
 It depends on the https://github.com/ImagicTheCat/Luaoop[Luaoop] library.
 
 TIP: If your GUI relies on time and you don't already have some kind of scheduler, https://github.com/ImagicTheCat/ELScheduler[ELScheduler] may interest you.
 
+.Principles
+- The library should be a framework, not a full fledged GUI; it must be defined/extended to suit needs.
+- It should decouple logic and rendering for clarity and flexibility. +
+E.g. the logic may stay in Lua and the rendering could be done by something else.
+- It should be flexible. +
+E.g. the 2D surface of a widget is not necessarily expressed in pixels of a screen, it could be meters for a VR/3D surface.
+- It should allow for both statefull and stateless renderers. +
+E.g. for performance rendering data could be updated only when needed.
+
 == Concepts
 
-GUI:: root widget
-Widget:: object which may contain other widgets
-Renderer:: used to render a GUI
-
-Widgets are 2D surfaces (rectangles) with an inner content.
-The GUI or the widgets can be created/extended and multiple renderers can be created/extended for the same GUI; the GUI logic and rendering are separated.
-
-NOTE: A widget may hold graphical data, but it should be a property of the widget, not of the renderer (to keep the separation clear). For example, a renderer could do a text rendering optimization by backing text in textures; this should not be owned by a widget.
-
-This design allows the use of ALGUI in flexible ways; the logic stays in Lua and the rendering can be done by something else.
+GUI:: Root widget.
+Widget:: Object which may contain other widgets. Defines a 2D surface (axis-aligned rectangle) with an inner content.
+Renderer:: Used to render a GUI.
 
 === View
 
@@ -40,7 +42,7 @@ NOTE: The inner shift is applied in inner space, not in the parent widget space.
 
 === Layout
 
-GUI layouts in general may be simple or complex ways to achieve dynamic organization of widgets based on some rules. ALGUI's widgets have a fixed surface and there are no internal rules to change that, but widgets can implement the `updateLayout()` method to create layouts.
+GUI layouts in general may be simple or complex ways to achieve dynamic organization of widgets based on some rules. ALGUI widgets have a fixed surface and there are no internal rules to change that, but widgets can implement layouts through the `updateLayout()` method.
 
 Layouts are updated recursively; when updating its layout, each widget can call `updateLayout()` on its children to request a specific size (if needed) and the children may update their layouts accordingly. This way, widgets are allowed to organize their children and set their own size based on their own layout.
 
