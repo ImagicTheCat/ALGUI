@@ -30,6 +30,20 @@ GUI:: Root widget.
 Widget:: Object which may contain other widgets. Defines a 2D surface (axis-aligned rectangle) with an inner content.
 Renderer:: Used to render a GUI.
 
+=== Event
+
+Events are emitted on widgets and are deferred through an event loop.
+
+.Event handler callback
+[source, lua]
+----
+-- Event handler.
+-- callback(widget, event, ...)
+--- widget: event target
+--- event: event identifier (any indexable value)
+--- ...: event arguments
+----
+
 === View
 
 Each widget has a view surface based on its parent's view surface. The view is recomputed when needed and allows to only render visible widgets.

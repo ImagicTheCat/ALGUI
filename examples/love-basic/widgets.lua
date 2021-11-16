@@ -3,11 +3,11 @@ local Widget = require("ALGUI.Widget")
 -- Button
 local Button = class("Button", Widget)
 
-local function e_button_pointer_enter(self, id)
+local function e_button_pointer_enter(self, event, id)
   self.overed = true
 end
 
-local function e_button_pointer_leave(self, id)
+local function e_button_pointer_leave(self, event, id)
   self.overed = false
 end
 

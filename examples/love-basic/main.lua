@@ -7,7 +7,7 @@ local widgets = require("widgets")
 
 local gui, renderer
 
-local function button_click(button, id, x, y, code, n)
+local function button_click(button, self, id, x, y, code, n)
   print("clicked", button, id, x, y, code, n)
   button:setText(code == 1 and "left" or code == 3 and "middle" or code == 2 and "right")
 end
@@ -18,21 +18,21 @@ function love.load()
   renderer = Renderer()
 
   local gui_drag = false
-  gui:listen("pointer-press", function(self, id, x, y, code)
+  gui:listen("pointer-press", function(self, event, id, x, y, code)
     gui_drag = true
   end)
 
-  gui:listen("pointer-release", function(self, id, x, y, code)
+  gui:listen("pointer-release", function(self, event, id, x, y, code)
     gui_drag = false
   end)
 
-  gui:listen("pointer-move", function(self, id, x, y, dx, dy)
+  gui:listen("pointer-move", function(self, event, id, x, y, dx, dy)
     if gui_drag then
       self:setInnerShift(self.ix+dx/self.zoom, self.iy+dy/self.zoom)
     end
   end)
 
-  gui:listen("pointer-wheel", function(self, id, x, y, amount)
+  gui:listen("pointer-wheel", function(self, event, id, x, y, amount)
     gui:setInnerZoom(gui.zoom*math.pow(1.25,amount))
   end)
 
@@ -51,35 +51,39 @@ function love.load()
   gui:add(flow)
 end
 
+function love.update(dt)
+  gui:tick()
+end
+
 function love.draw()
   renderer:render(gui)
 end
 
 function love.keypressed(kcode, scode, isrepeat)
-  gui:triggerKeyPress(kcode, scode, isrepeat)
+  gui:emitKeyPress(kcode, scode, isrepeat)
 end
 
 function love.keyreleased(kcode, scode)
-  gui:triggerKeyRelease(kcode, scode)
+  gui:emitKeyRelease(kcode, scode)
 end
 
 function love.textinput(text)
-  gui:triggerTextInput(text)
+  gui:emitTextInput(text)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-  gui:triggerPointerPress((istouch and 1 or 0),x,y,button)
+  gui:emitPointerPress((istouch and 1 or 0),x,y,button)
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
-  gui:triggerPointerRelease((istouch and 1 or 0),x,y,button)
+  gui:emitPointerRelease((istouch and 1 or 0),x,y,button)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
-  gui:triggerPointerMove((istouch and 1 or 0),x,y,dx,dy)
+  gui:emitPointerMove((istouch and 1 or 0),x,y,dx,dy)
 end
 
 function love.wheelmoved(x,y)
   local mx, my = love.mouse.getPosition()
-  gui:triggerPointerWheel(0,mx,my,y)
+  gui:emitPointerWheel(0,mx,my,y)
 end

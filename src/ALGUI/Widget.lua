@@ -1,6 +1,8 @@
 -- https://github.com/ImagicTheCat/ALGUI
 -- MIT license (see LICENSE or src/ALGUI/GUI.lua)
 
+local table_pack = table.pack or function(...) return {n = select("#", ...), ...} end
+
 local class = require("Luaoop").class
 local utils = require("ALGUI.utils")
 
@@ -52,8 +54,8 @@ local function update_parent(self, parent)
     self.draw_dirty = nil
   end
 
-  if self.parent ~= old_parent then self:trigger("parent-change", old_parent) end
-  if self.gui ~= old_gui then self:trigger("gui-change", old_gui) end
+  if self.parent ~= old_parent then self:emit("parent-change", old_parent) end
+  if self.gui ~= old_gui then self:emit("gui-change", old_gui) end
 
   for child in pairs(self.widgets) do update_parent(child, self) end
 end
@@ -71,7 +73,8 @@ function Widget:__construct()
   self.z_counter = 0
   self.depth = 0
   self.widgets = {}
-  self.events_listeners = {}
+  self.events_listeners = {} -- map of event id => set of callbacks
+  self.any_listeners = {} -- set of callbacks
 
   -- self.draw_list -- nil: empty, table: list of widgets to draw in order
   -- self.iz (widget implicit z)
@@ -114,9 +117,14 @@ function Widget:remove(widget)
   end
 end
 
--- listen widget event
--- callback(widget, ...)
---- ...: event args
+-- Event handler.
+-- callback(widget, event, ...)
+--- widget: event target
+--- event: event identifier (any indexable value)
+--- ...: event arguments
+
+-- Listen to specific widget events.
+-- event: event identifier (any indexable value)
 function Widget:listen(event, callback)
   -- get/create event entry
   local listeners = self.events_listeners[event]
@@ -124,7 +132,6 @@ function Widget:listen(event, callback)
     listeners = {}
     self.events_listeners[event] = listeners
   end
-
   listeners[callback] = true
 end
 
@@ -132,22 +139,28 @@ function Widget:unlisten(event, callback)
   local listeners = self.events_listeners[event]
   if listeners then
     listeners[callback] = nil
-
     if not next(listeners) then -- if empty, remove event entry
       self.events_listeners[event] = nil
     end
   end
 end
 
--- trigger widget event
--- ...: event args
-function Widget:trigger(event, ...)
-  local listeners = self.events_listeners[event]
-  if listeners then
-    for callback in pairs(listeners) do
-      callback(self, ...)
-    end
-  end
+-- Listen to any widget events.
+function Widget:listenAny(callback)
+  self.any_listeners[callback] = true
+end
+
+function Widget:unlistenAny(callback)
+  self.any_listeners[callback] = nil
+end
+
+-- Emit widget event.
+-- Deferred to the event loop.
+--
+-- event: event identifier (any indexable value)
+-- ...: event arguments
+function Widget:emit(event, ...)
+  if self.gui then table.insert(self.gui.events, table_pack(self, event, ...)) end
 end
 
 function Widget:setPosition(x,y)

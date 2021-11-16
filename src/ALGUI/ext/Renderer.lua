@@ -33,7 +33,6 @@ end
 -- override
 -- render widgets in draw order/recursive
 function eRenderer:render(gui)
-  gui:update()
   render_widget(self,gui,gui.x,gui.y,1)
 end
 
