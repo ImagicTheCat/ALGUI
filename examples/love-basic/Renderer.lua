@@ -1,8 +1,6 @@
-local ALGUI_Renderer = require("ALGUI.ext.Renderer")
 local widgets = require("widgets")
 
-local Renderer = class("LÖVE Renderer", ALGUI_Renderer)
-
+local Renderer = class("LÖVE Renderer")
 local wrenders = {}
 
 wrenders[widgets.Button] = function(self, widget)
@@ -18,24 +16,27 @@ wrenders[widgets.Button] = function(self, widget)
   end
 end
 
--- overload
-function Renderer:render(gui)
-  ALGUI_Renderer.render(self, gui)
-  love.graphics.setScissor()
-end
+function Renderer:bind(gui) self.gui = gui end
 
--- overload
-function Renderer:renderWidget(widget,x,y,scale)
-  -- render widget
-  local wr = wrenders[class.type(widget)]
+local function recursive_render(self, widget)
+  local wr = wrenders[xtype.get(widget)]
   if wr then
+    local x, y, scale = widget.tx, widget.ty, widget.tscale
     love.graphics.push()
     love.graphics.translate(x,y)
     love.graphics.scale(scale)
-    love.graphics.setScissor(widget.vx*scale+x,widget.vy*scale+y,widget.vw*scale,widget.vh*scale)
+    love.graphics.setScissor(widget.vx*scale+x, widget.vy*scale+y,
+      widget.vw*scale, widget.vh*scale)
     wr(self, widget)
     love.graphics.pop()
   end
+  -- recursion
+  for _, child in ipairs(widget.draw_list) do recursive_render(self, child) end
+end
+
+function Renderer:render()
+  recursive_render(self, self.gui)
+  love.graphics.setScissor()
 end
 
 return Renderer

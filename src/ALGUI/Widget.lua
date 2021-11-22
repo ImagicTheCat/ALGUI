@@ -8,123 +8,92 @@ local utils = require("ALGUI.utils")
 
 local Widget = class("Widget")
 
-local function sort_draw_list(a,b) -- sort by z,iz
-  return (a.z < b.z or (a.z == b.z and a.iz < b.iz))
-end
-
--- PRIVATE METHODS
-
--- recursive parent update
--- parent: can be nil
-local function update_parent(self, parent)
-  -- set iz (widget implicit z)
-  if parent then
-    if parent ~= self.parent then -- update if parent changed
-      self.iz = parent.z_counter
-      parent.z_counter = self.iz+1 -- simple increment, will probably never "overflow"
-    end
-  else
-    self.iz = nil
+-- Recursive widget tree binding.
+-- parent: may be nil
+local function bindParent(self, parent)
+  -- unbind
+  if self.gui then
+    self:preUnbind()
+    self:unmarkDirty("layout", "view", "drawlist", "transform")
+    self.gui:emit("unbind", self)
   end
-
-  local old_parent = self.parent
+  -- update
   self.parent = parent
-  self.depth = (parent and parent.depth+1 or 0)
-
-  if self.gui then -- save/unmark dirties from old GUI
-    self.layout_dirty = self.gui.layout_dirties[self]
-    self.view_dirty = self.gui.view_dirties[self]
-    self.draw_dirty = self.gui.draw_dirties[self]
-
-    self.gui.layout_dirties[self] = nil
-    self.gui.view_dirties[self] = nil
-    self.gui.draw_dirties[self] = nil
+  self.depth = parent and parent.depth+1 or 0
+  self.gui = parent and parent.gui
+  -- bind
+  if self.gui then
+    self:postBind()
+    self:markDirty("layout", "view", "drawlist", "transform")
+    self.gui:emit("bind", self)
   end
-
-  local old_gui = self.gui
-  self.gui = (parent and parent.gui) -- new GUI
-
-  if self.gui then -- restore/mark dirties for new GUI
-    self.gui.layout_dirties[self] = self.layout_dirty
-    self.gui.view_dirties[self] = self.view_dirty
-    self.gui.draw_dirties[self] = self.draw_dirty
-
-    self.layout_dirty = nil
-    self.view_dirty = nil
-    self.draw_dirty = nil
-  end
-
-  if self.parent ~= old_parent then self:emit("parent-change", old_parent) end
-  if self.gui ~= old_gui then self:emit("gui-change", old_gui) end
-
-  for child in pairs(self.widgets) do update_parent(child, self) end
+  -- recursion
+  for child in pairs(self.widgets) do bindParent(child, self) end
 end
-
--- METHODS
 
 function Widget:__construct()
   self.x, self.y, self.w, self.h = 0, 0, 0, 0 -- boundaries
+  self.tx, self.ty, self.tscale = 0, 0, 1 -- absolute transform
   self.z = 0 -- explicit weight display order
   self.visible = true
-  self.vx, self.vy, self.vw, self.vh = 0, 0, 0, 0 -- view (visible relative area of the widget)
-  self.ivx, self.ivy, self.ivw, self.ivh = 0, 0, 0, 0 -- inner view (visible relative area of the widget)
+  -- view (visible relative area of the widget)
+  self.vx, self.vy, self.vw, self.vh = 0, 0, 0, 0
+  -- inner view (visible relative area of the widget)
+  self.ivx, self.ivy, self.ivw, self.ivh = 0, 0, 0, 0
   self.ix, self.iy = 0, 0 -- inner content shift (inner space)
   self.zoom = 1 -- inner content zoom
-  self.z_counter = 0
+  self.z_counter = 0 -- used to compute implicit widget z
   self.depth = 0
-  self.widgets = {}
+  self.widgets = {} -- children
+  self.draw_list = {} -- list of children to draw in order
   self.events_listeners = {} -- map of event id => set of callbacks
   self.any_listeners = {} -- set of callbacks
-
-  -- self.draw_list -- nil: empty, table: list of widgets to draw in order
   -- self.iz (widget implicit z)
   -- self.parent
   -- self.gui
-  -- self.layout_dirty, self.view_dirty, self.draw_dirty -- dirty flags
 end
 
--- layout, view, draw: truthy or falsy (flags)
-function Widget:markDirty(layout, view, draw)
-  if self.gui then -- mark on GUI
-    if layout then self.gui.layout_dirties[self] = true end
-    if view then self.gui.view_dirties[self] = true end
-    if draw then self.gui.draw_dirties[self] = true end
-  else -- mark on self
-    if layout then self.layout_dirty = true end
-    if view then self.view_dirty = true end
-    if draw then self.draw_dirty = true end
-  end
+-- Mark dirty.
+-- ...: list of flags, see GUI.dirties
+function Widget:markDirty(...)
+  if not self.gui then return end
+  for _, id in ipairs{...} do self.gui.dirties[id][self] = true end
+end
+
+-- Un-mark dirty.
+-- ...: list of flags, see GUI.dirties
+function Widget:unmarkDirty(...)
+  if not self.gui then return end
+  for _, id in ipairs{...} do self.gui.dirties[id][self] = nil end
 end
 
 function Widget:add(widget)
-  if widget.parent then
-    widget.parent:remove(self)
-  end
-
+  if widget.parent then widget.parent:remove(self) end
   self.widgets[widget] = true
-  update_parent(widget, self) -- set parent
-
-  self:markDirty(true,nil,true) -- layout, draw
-  widget:markDirty(true,true,nil) -- layout, view
+  self:markDirty("layout", "drawlist")
+  -- update child
+  widget.iz = self.z_counter
+  self.z_counter = widget.iz+1 -- simple increment, will probably never "overflow"
+  bindParent(widget, self)
 end
 
 function Widget:remove(widget)
   if self.widgets[widget] then
     self.widgets[widget] = nil
-    update_parent(widget) -- remove parent
-
-    self:markDirty(true,nil,true) -- layout, draw
+    self:markDirty("layout", "drawlist")
+    -- update child
+    bindParent(widget, nil)
   end
 end
 
 -- Event handler.
 -- callback(widget, event, ...)
 --- widget: event target
---- event: event identifier (any indexable value)
+--- event: event identifier (any value as key)
 --- ...: event arguments
 
 -- Listen to specific widget events.
--- event: event identifier (any indexable value)
+-- event: event identifier (any value as key)
 function Widget:listen(event, callback)
   -- get/create event entry
   local listeners = self.events_listeners[event]
@@ -157,7 +126,7 @@ end
 -- Emit widget event.
 -- Deferred to the event loop.
 --
--- event: event identifier (any indexable value)
+-- event: event identifier (any value as key)
 -- ...: event arguments
 function Widget:emit(event, ...)
   if self.gui then table.insert(self.gui.events, table_pack(self, event, ...)) end
@@ -165,130 +134,125 @@ end
 
 function Widget:setPosition(x,y)
   if self.parent and (self.x ~= x or self.y ~= y) then -- changed
-    self:markDirty(nil,true,nil) -- view
-    self.parent:markDirty(true,nil,true) -- layout, draw
+    self:markDirty("view", "transform")
+    self.parent:markDirty("layout", "drawlist")
   end
-
   self.x, self.y = x,y
 end
 
 function Widget:setSize(w,h)
   if self.w ~= w or self.h ~= h then -- changed
-    self:markDirty(true,true,nil) -- layout, view
-    if self.parent then
-      self.parent:markDirty(true,nil,true) -- layout, draw
-    end
+    self:markDirty("layout", "view")
+    if self.parent then self.parent:markDirty("layout", "drawlist") end
   end
-
   self.w, self.h = w,h
 end
 
 function Widget:setZ(z)
   if self.parent and self.z ~= z then -- changed
-    self.parent:markDirty(nil,nil,true) -- draw
+    self.parent:markDirty("drawlist")
   end
-
   self.z = z
 end
 
 function Widget:setVisible(visible)
   if self.parent and self.visible ~= visible then -- changed
-    self.parent:markDirty(nil,nil,true) -- draw
+    self.parent:markDirty("drawlist")
   end
-
   self.visible = visible
 end
 
 function Widget:setInnerZoom(zoom)
   if self.zoom ~= zoom then -- changed
-    self:markDirty(nil,true,nil) -- view
+    self:markDirty("view")
+    for child in pairs(self.widgets) do child:markDirty("transform") end
   end
-
   self.zoom = zoom
 end
 
 function Widget:setInnerShift(x,y)
   if self.ix ~= x or self.iy ~= y then -- changed
-    self:markDirty(nil,true,nil) -- view
+    self:markDirty("view")
+    for child in pairs(self.widgets) do child:markDirty("transform") end
   end
-
   self.ix, self.iy = x,y
 end
 
--- compute absolute (shallowest parent/GUI) transform (recursive)
--- useful to compute display area for non-display logic
--- (may require to update the GUI as any display dependent features)
---
--- return x,y,scale or nil if not in a GUI
---- x,y: absolute position
---- scale: absolute scale
-function Widget:computeTransform()
-  local x,y,scale = self.x,self.y,1
-  local parent = self.parent
-  while parent do
-    scale = parent.zoom*scale
-    x,y = parent.x+(parent.ix+x)*parent.zoom, parent.y+(parent.iy+y)*parent.zoom
-    parent = parent.parent
-  end
+-- Called after the widget is bound to a GUI.
+-- Allow listening of GUI events.
+function Widget:postBind() end
 
-  return x,y,scale
-end
+-- Called before the widget is unbound from a GUI.
+-- Allow un-listening of GUI events.
+function Widget:preUnbind() end
 
--- (alias) mark layout for update
-function Widget:markLayoutDirty()
-  self:markDirty(true,nil,nil)
-end
-
--- called when the widget layout should be updated
+-- Called when the widget layout should be updated.
+-- This function should organize children by using the same function on them
+-- and/or set its own size when done.
 --
--- this function should organize children by using the same function on them
--- and/or set its own size when done
---
--- it shouldn't set its own position
--- can call Widget:updateLayout() instead of Widget:setSize() and use the final widget size
--- can call Widget:setPosition()
--- can call self:setSize()
+-- It shouldn't set its own position.
+-- Can call Widget:updateLayout() instead of Widget:setSize() and use the final widget size.
+-- Can call Widget:setPosition().
+-- Can call self:setSize().
 --
 -- w,h: requested size
 function Widget:updateLayout(w,h)
 end
 
--- update view data
--- (internal)
--- (sparse recursion)
-function Widget:updateView()
-  self.gui.view_dirties[self] = nil -- unmark dirty
-
-  local ivx, ivy, ivw, ivh = self.ivx, self.ivy, self.ivw, self.ivh -- old inner view
+-- Update transform data.
+-- (internal, recursion)
+function Widget:updateTransform()
+  self:unmarkDirty("transform")
+  -- compute transform
   local parent = self.parent
+  if parent then
+    self.tx = parent.tx+(parent.ix+self.x)*parent.tscale*parent.zoom
+    self.ty = parent.ty+(parent.iy+self.y)*parent.tscale*parent.zoom
+    self.tscale = parent.tscale*parent.zoom
+  else
+    self.tx, self.ty, self.tscale = self.x, self.y, 1
+  end
+  -- recursion
+  for child in pairs(self.widgets) do child:updateTransform() end
+end
 
+-- Update view data.
+-- (internal, sparse recursion)
+function Widget:updateView()
+  self:unmarkDirty("view")
+  -- old inner view
+  local ivx, ivy, ivw, ivh = self.ivx, self.ivy, self.ivw, self.ivh
+  local parent = self.parent
   if parent then -- compute view based on parent
     -- compute new view
     --- intersection of boundaries and parent inner view
     self.vx, self.vy, self.vw, self.vh = utils.intersect(
-      self.x, self.y, self.w, self.h,
-      parent.ivx, parent.ivy, parent.ivw, parent.ivh
-    )
-
+      self.x, self.y, self.w, self.h, parent.ivx, parent.ivy, parent.ivw, parent.ivh)
     --- move to widget space
     self.vx = self.vx-self.x
     self.vy = self.vy-self.y
+  else
+    self.vx, self.vy, self.vw, self.vh = 0, 0, self.w, self.h
   end
-
   -- compute inner view
-  self.ivx, self.ivy, self.ivw, self.ivh = self.vx/self.zoom-self.ix, self.vy/self.zoom-self.iy, self.vw/self.zoom, self.vh/self.zoom
-
-  if self.ivx ~= ivx or self.ivy ~= ivy or self.ivw ~= ivw or self.ivh ~= ivh then -- changed
-    self.gui.draw_dirties[self] = true
+  self.ivx, self.ivy, self.ivw, self.ivh =
+    self.vx/self.zoom-self.ix, self.vy/self.zoom-self.iy,
+    self.vw/self.zoom, self.vh/self.zoom
+  -- check changed
+  if self.ivx ~= ivx or self.ivy ~= ivy or self.ivw ~= ivw or self.ivh ~= ivh then
+    self:markDirty("drawlist")
     for child in pairs(self.widgets) do child:updateView() end
   end
 end
 
--- update draw data
--- (internal)
-function Widget:updateDraw()
-  self.gui.draw_dirties[self] = nil -- unmark dirty
+local function sort_draw_list(a,b) -- sort by z,iz
+  return (a.z < b.z or (a.z == b.z and a.iz < b.iz))
+end
 
+-- Update draw data.
+-- (internal)
+function Widget:updateDrawlist()
+  self:unmarkDirty("drawlist")
   -- build draw list
   --- add visible widgets
   local draw_list = {}
@@ -297,11 +261,9 @@ function Widget:updateDraw()
       table.insert(draw_list, child)
     end
   end
-
   --- sort in draw order
   table.sort(draw_list, sort_draw_list)
-
-  self.draw_list = (draw_list[1] and draw_list or nil) -- draw_list or nil if empty
+  self.draw_list = draw_list
 end
 
 return Widget

@@ -1,6 +1,8 @@
 package.path = "src/?.lua;"..package.path
 
 class = require("Luaoop").class
+xtype = require("xtype")
+
 local GUI = require("ALGUI.ext.GUI")
 local Renderer = require("Renderer")
 local widgets = require("widgets")
@@ -16,6 +18,7 @@ function love.load()
   gui = GUI()
   gui:setSize(love.graphics.getDimensions())
   renderer = Renderer()
+  gui:bind(renderer)
 
   local gui_drag = false
   gui:listen("pointer-press", function(self, event, id, x, y, code)
@@ -56,7 +59,7 @@ function love.update(dt)
 end
 
 function love.draw()
-  renderer:render(gui)
+  renderer:render()
 end
 
 function love.keypressed(kcode, scode, isrepeat)

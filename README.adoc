@@ -40,7 +40,7 @@ Events are emitted on widgets and are deferred through an event loop.
 -- Event handler.
 -- callback(widget, event, ...)
 --- widget: event target
---- event: event identifier (any indexable value)
+--- event: event identifier (any value as key)
 --- ...: event arguments
 ----
 

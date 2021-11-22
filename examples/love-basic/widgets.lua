@@ -37,7 +37,7 @@ end
 
 function FlowLayout:setMargin(v)
   self.flow_margin = v
-  self:markLayoutDirty()
+  self:markDirty("layout")
 end
 
 function FlowLayout:updateLayout(w,h)
