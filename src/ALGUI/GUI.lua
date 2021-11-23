@@ -65,6 +65,10 @@ local function sort_dirties(a, b) return a.depth < b.depth end
 
 -- Process events and update GUI data (render, layout, etc).
 -- To be integrated into an existing app loop.
+--
+-- To ensure consistency of computed data between the GUI and Renderer, the
+-- state of the GUI should not be modified between the end of a tick and the
+-- rendering (emitting events is fine).
 function GUI:tick()
   -- process events
   for _, event in ipairs(self.events) do

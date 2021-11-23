@@ -21,7 +21,7 @@ TIP: If your GUI relies on time and you don't already have some kind of schedule
 E.g. the logic may stay in Lua and the rendering could be done by something else.
 - It should be flexible. +
 E.g. the 2D surface of a widget is not necessarily expressed in pixels of a screen, it could be meters for a VR/3D surface.
-- It should allow for both statefull and stateless renderers. +
+- It should allow for both stateful and stateless renderers. +
 E.g. for performance rendering data could be updated only when needed.
 
 == Concepts
@@ -65,3 +65,9 @@ NOTE: Layouts are updated when the widgets' size or content is updated.
 CAUTION: Layouts are built from the shallowest to the deepest widgets; widgets shouldn't base their layout on the parent data.
 
 WARNING: Wrongly designed layouts may cause an infinite loop.
+
+=== Consistency
+
+Some computed data is cached to improve logic performances. A stateful renderer may also build data by listening to GUI events.
+
+To ensure consistency of computed data between the GUI and Renderer, the state of the GUI should not be modified between the end of a *tick* and the rendering (emitting events is fine).
