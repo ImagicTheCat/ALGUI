@@ -71,3 +71,5 @@ WARNING: Wrongly designed layouts may cause an infinite loop.
 Some computed data is cached to improve logic performances. A stateful renderer may also build data by listening to GUI events.
 
 To ensure consistency of computed data between the GUI and Renderer, the state of the GUI should not be modified between the end of a *tick* and the rendering (emitting events is fine).
+
+WARNING: By the loose coupling design of the library, it is not recommended to add/remove a widget between different GUIs; this may result in deferred effects or cached data to be incorrectly applied or interpreted.
