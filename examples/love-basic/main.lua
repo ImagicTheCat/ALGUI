@@ -28,8 +28,8 @@ function love.load()
       self:setInnerShift(self.ix+dx/self.zoom, self.iy+dy/self.zoom)
     end
   end)
-  gui:listen("pointer-wheel", function(self, event, id, x, y, amount)
-    gui:setInnerZoom(gui.zoom*math.pow(1.25,amount))
+  gui:listen("pointer-wheel", function(self, event, id, x, y, wx, wy)
+    gui:setInnerZoom(gui.zoom*math.pow(1.25, wy))
   end)
   -- layout
   local flow = widgets.FlowLayout()
@@ -65,10 +65,10 @@ function love.textinput(text)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-  gui:emitPointerPress((istouch and 1 or 0), x, y, button)
+  gui:emitPointerPress((istouch and 1 or 0), x, y, button, presses)
 end
 
-function love.mousereleased(x, y, button, istouch, presses)
+function love.mousereleased(x, y, button, istouch)
   gui:emitPointerRelease((istouch and 1 or 0), x, y, button)
 end
 
@@ -78,5 +78,5 @@ end
 
 function love.wheelmoved(x,y)
   local mx, my = love.mouse.getPosition()
-  gui:emitPointerWheel(0, mx, my, y)
+  gui:emitPointerWheel(0, mx, my, x, y)
 end
