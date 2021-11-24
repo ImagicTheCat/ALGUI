@@ -54,16 +54,16 @@ end
 -- return list of overed widgets
 local function dispatchSpatialEvent(widget, x, y, callback)
   local overeds = {}; getOveredWidgets(overeds, widget, x, y)
-  -- down phase (capture)
+  -- down phase
   for i=1, #overeds-1 do callback(overeds[i], "down") end
-  -- up phase (bubble-up)
+  -- up phase
   for i=#overeds, 1, -1 do callback(overeds[i], "up") end
   return overeds
 end
 
 -- A spatial event is propagated by crossing widgets at a specific position,
--- from the shallowest to the deepest widget, known as the down or capture
--- phase, then backwards, known as the up or bubble up phase.
+-- from the shallowest to the deepest widget, known as the down phase, then
+-- backwards, known as the up phase.
 --
 -- The deepest widget, also known as the target, only receives the up phase event.
 --
