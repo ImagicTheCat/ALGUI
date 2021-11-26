@@ -63,14 +63,7 @@ end
 
 local function sort_dirties(a, b) return a.depth < b.depth end
 
--- Process events and update GUI data (render, layout, etc).
--- To be integrated into an existing app loop.
---
--- To ensure consistency of computed data between the GUI and Renderer, the
--- state of the GUI should not be modified between the end of a tick and the
--- rendering (emitting events is fine).
-function GUI:tick()
-  -- process events
+local function processEvents(self)
   for _, event in ipairs(self.events) do
     local widget, eid = table_unpack(event, 1, 2)
     if widget.gui == self then
@@ -92,6 +85,17 @@ function GUI:tick()
     end
   end
   self.events = {} -- clear
+end
+
+-- Process events and update GUI data (render, layout, etc).
+-- To be integrated into an existing app loop.
+--
+-- To ensure consistency of computed data between the GUI and Renderer, the
+-- state of the GUI should not be modified between the end of a tick and the
+-- rendering (emitting events is fine).
+function GUI:tick()
+  -- pre process
+  processEvents(self)
   -- process dirties
   --- layout
   while next(self.dirties.layout) do -- process until stable
@@ -133,6 +137,8 @@ function GUI:tick()
   end
   --- drawlist
   for widget in pairs(self.dirties.drawlist) do widget:updateDrawlist() end
+  -- post process
+  processEvents(self)
 end
 
 return GUI
