@@ -39,7 +39,7 @@ end
 -- Emits "focus-transition" on GUI and "focus-update" on old/new focused widgets.
 -- widget: (optional) nil to clear focus
 -- focus-transition: old, new
--- focus-update: boolean state
+-- focus-update: focus (flag)
 function GUI:setFocus(widget)
   if self.focus ~= widget then
     self:emit("focus-transition", self.focus, widget)

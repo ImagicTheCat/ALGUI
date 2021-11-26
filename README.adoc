@@ -34,16 +34,6 @@ Renderer:: Used to render a GUI.
 
 Events are emitted on widgets and are deferred through an event loop.
 
-.Event handler callback
-[source, lua]
-----
--- Event handler.
--- callback(widget, event, ...)
---- widget: event target
---- event: event identifier (any value as key)
---- ...: event arguments
-----
-
 === View
 
 Each widget has a view surface based on its parent's view surface. The view is recomputed when needed and allows to only render visible widgets.
@@ -73,3 +63,67 @@ Some computed data is cached to improve logic performances. A stateful renderer 
 To ensure consistency of computed data between the GUI and Renderer, the state of the GUI should not be modified between the end of a *tick* and the rendering (emitting events is fine).
 
 WARNING: By the loose coupling design of the library, it is not recommended to add/remove a widget between different GUIs; this may result in deferred effects or cached data to be incorrectly applied or interpreted.
+
+== API
+
+=== Events
+
+.Event handler callback
+[source, lua]
+----
+-- Event handler.
+-- callback(widget, event, ...)
+--- widget: event target
+--- event: event identifier (any value as key)
+--- ...: event arguments
+----
+
+.Core events
+[%autowidth.stretch]
+|===
+|Identifier |Target |Arguments |Description
+
+|bind |GUI |widget |When a widget is bound to the GUI.
+|unbind |GUI |widget |When a widget is unbound from the GUI.
+|position-update |Widget |x, y |
+|size-update |Widget |w, h |
+|z-update |Widget |z |
+|visibility-update |Widget |visibility |When the final visibility, not the visible flag, is updated.
+|inner-zoom-update |Widget |zoom |
+|inner-offset-update |Widget |x, y |
+|transform-update |Widget | |
+|view-update |Widget | |
+|drawlist-update |Widget | |
+|===
+
+=== Ext
+
+==== Spatial event
+
+A spatial event is propagated by crossing widgets at a specific position, from the shallowest to the deepest widget, known as the down phase, then backwards, known as the up phase.
+
+The deepest widget, also known as the target, only receives the up phase event.
+
+Down phase events have the `:down` suffix to their identifier.
+
+A unique state is shared among the events to implement a capture behavior by
+checking/setting the `captured` field flag.
+
+.Ext GUI events
+[%autowidth.stretch]
+|===
+|Identifier |Target |Arguments |Description
+
+|focus-transition |GUI |old, new |
+|focus-update |Widget |focus (flag) |
+|pointer-press |Widget |id, x, y, button, n, state | (spatial)
+|pointer-release |Widget |id, x, y, button, n, state | (spatial)
+|pointer-click |Widget |id, x, y, button, n, state | (spatial)
+|pointer-wheel |Widget | id, x, y, wx, wy, state | (spatial)
+|pointer-move |Widget |id, x, y, dx, dy, state | (spatial)
+|pointer-enter |Widget |id |
+|pointer-leave |Widget |id |
+|key-press |GUI and focused widget |keycode, scancode, repeated |
+|key-release |GUI and focused widget |keycode, scancode |
+|text-input |GUI and focused widget |text |
+|===
