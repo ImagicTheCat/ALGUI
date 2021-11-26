@@ -36,13 +36,16 @@ function GUI:__construct()
 end
 
 -- Set GUI focus.
--- Emits "focus-change" on old/new focused widgets.
--- widget: (optional)
+-- Emits "focus-transition" on GUI and "focus-update" on old/new focused widgets.
+-- widget: (optional) nil to clear focus
+-- focus-transition: old, new
+-- focus-update: boolean state
 function GUI:setFocus(widget)
   if self.focus ~= widget then
-    if self.focus then self.focus:emit("focus-change", false) end
+    self:emit("focus-transition", self.focus, widget)
+    if self.focus then self.focus:emit("focus-update", false) end
+    if widget then widget:emit("focus-update", true) end
     self.focus = widget
-    if widget then widget:emit("focus-change", true) end
   end
 end
 
