@@ -50,9 +50,9 @@ Each widget has a view surface based on its parent's view surface. The view is r
 
 === Inner content
 
-Each widget has an inner content which contains its children. The parent widget has *zoom* and *shift* properties to scale/shift the display of the inner content.
+Each widget has an inner content which contains its children. The parent widget has *zoom* and *offset* properties to scale/offset the display of the inner content.
 
-NOTE: The inner shift is applied in inner space, not in the parent widget space.
+NOTE: The inner offset is applied in inner space, not in the parent widget space.
 
 === Layout
 

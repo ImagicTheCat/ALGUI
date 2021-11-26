@@ -35,12 +35,12 @@ function Widget:__construct()
   self.x, self.y, self.w, self.h = 0, 0, 0, 0 -- boundaries
   self.tx, self.ty, self.tscale = 0, 0, 1 -- absolute transform
   self.z = 0 -- explicit weight display order
-  self.visible = true
+  self.visible, self.visibility = true, true -- visible flag and final visibility
   -- view (visible relative area of the widget)
   self.vx, self.vy, self.vw, self.vh = 0, 0, 0, 0
   -- inner view (visible relative area of the widget)
   self.ivx, self.ivy, self.ivw, self.ivh = 0, 0, 0, 0
-  self.ix, self.iy = 0, 0 -- inner content shift (inner space)
+  self.ix, self.iy = 0, 0 -- inner content offset (inner space)
   self.zoom = 1 -- inner content zoom
   self.z_counter = 0 -- used to compute implicit widget z
   self.depth = 0
@@ -133,9 +133,10 @@ function Widget:emit(event, ...)
 end
 
 function Widget:setPosition(x,y)
-  if self.parent and (self.x ~= x or self.y ~= y) then -- changed
+  if self.x ~= x or self.y ~= y then -- changed
     self:markDirty("view", "transform")
-    self.parent:markDirty("layout", "drawlist")
+    if self.parent then self.parent:markDirty("layout") end
+    self:emit("position-update", x, y)
   end
   self.x, self.y = x,y
 end
@@ -143,39 +144,50 @@ end
 function Widget:setSize(w,h)
   if self.w ~= w or self.h ~= h then -- changed
     self:markDirty("layout", "view")
-    if self.parent then self.parent:markDirty("layout", "drawlist") end
+    if self.parent then self.parent:markDirty("layout") end
+    self:emit("size-update", w, h)
+    self.w, self.h = w,h
   end
-  self.w, self.h = w,h
 end
 
 function Widget:setZ(z)
-  if self.parent and self.z ~= z then -- changed
-    self.parent:markDirty("drawlist")
+  if self.z ~= z then -- changed
+    if self.parent then self.parent:markDirty("drawlist") end
+    self:emit("z-update", z)
   end
   self.z = z
 end
 
-function Widget:setVisible(visible)
-  if self.parent and self.visible ~= visible then -- changed
-    self.parent:markDirty("drawlist")
+local function updateVisibility(self)
+  local visibility = self.visible and self.vw > 0 and self.vh > 0
+  if visibility ~= self.visibility then -- changed
+    if self.parent then self.parent:markDirty("drawlist") end
+    self:emit("visibility-update", visibility)
+    self.visibility = visibility
   end
+end
+
+function Widget:setVisible(visible)
   self.visible = visible
+  updateVisibility(self)
 end
 
 function Widget:setInnerZoom(zoom)
   if self.zoom ~= zoom then -- changed
     self:markDirty("view")
     for child in pairs(self.widgets) do child:markDirty("transform") end
+    self:emit("inner-zoom-update", zoom)
+    self.zoom = zoom
   end
-  self.zoom = zoom
 end
 
-function Widget:setInnerShift(x,y)
+function Widget:setInnerOffset(x,y)
   if self.ix ~= x or self.iy ~= y then -- changed
     self:markDirty("view")
     for child in pairs(self.widgets) do child:markDirty("transform") end
+    self:emit("inner-offset-update", x, y)
+    self.ix, self.iy = x,y
   end
-  self.ix, self.iy = x,y
 end
 
 -- Called after the widget is bound to a GUI.
@@ -203,6 +215,7 @@ end
 -- (internal, recursion)
 function Widget:updateTransform()
   self:unmarkDirty("transform")
+  self:emit("transform-update")
   -- compute transform
   local parent = self.parent
   if parent then
@@ -220,8 +233,10 @@ end
 -- (internal, sparse recursion)
 function Widget:updateView()
   self:unmarkDirty("view")
-  -- old inner view
+  -- old view and inner view
+  local vx, vy, vw, vh = self.vx, self.vy, self.vw, self.vh
   local ivx, ivy, ivw, ivh = self.ivx, self.ivy, self.ivw, self.ivh
+  -- compute view
   local parent = self.parent
   if parent then -- compute view based on parent
     -- compute new view
@@ -234,13 +249,17 @@ function Widget:updateView()
   else
     self.vx, self.vy, self.vw, self.vh = 0, 0, self.w, self.h
   end
+  -- check view update
+  if self.vx ~= vx or self.vy ~= vy or self.vw ~= vw or self.vh ~= vh then
+    updateVisibility(self)
+    self:emit("view-update")
+  end
   -- compute inner view
   self.ivx, self.ivy, self.ivw, self.ivh =
     self.vx/self.zoom-self.ix, self.vy/self.zoom-self.iy,
     self.vw/self.zoom, self.vh/self.zoom
-  -- check changed
+  -- check inner view changed
   if self.ivx ~= ivx or self.ivy ~= ivy or self.ivw ~= ivw or self.ivh ~= ivh then
-    self:markDirty("drawlist")
     for child in pairs(self.widgets) do child:updateView() end
   end
 end
@@ -253,13 +272,12 @@ end
 -- (internal)
 function Widget:updateDrawlist()
   self:unmarkDirty("drawlist")
+  self:emit("drawlist-update")
   -- build draw list
   --- add visible widgets
   local draw_list = {}
   for child in pairs(self.widgets) do
-    if child.visible and child.vw > 0 and child.vh > 0 then -- check visibility
-      table.insert(draw_list, child)
-    end
+    if child.visibility then table.insert(draw_list, child) end
   end
   --- sort in draw order
   table.sort(draw_list, sort_draw_list)

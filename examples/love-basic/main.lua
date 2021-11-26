@@ -25,7 +25,7 @@ function love.load()
   gui:listen("pointer-release", function() gui_drag = false end)
   gui:listen("pointer-move", function(self, event, id, x, y, dx, dy)
     if gui_drag then
-      self:setInnerShift(self.ix+dx/self.zoom, self.iy+dy/self.zoom)
+      self:setInnerOffset(self.ix+dx/self.zoom, self.iy+dy/self.zoom)
     end
   end)
   gui:listen("pointer-wheel", function(self, event, id, x, y, wx, wy)
