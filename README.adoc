@@ -58,7 +58,7 @@ WARNING: Wrongly designed layouts may cause an infinite loop.
 
 === Consistency
 
-Some computed data is cached to improve logic performances. A stateful renderer may also build data by listening to GUI events.
+Some computed data are cached to improve logic performances. A stateful renderer may also build data by listening to GUI events.
 
 To ensure consistency of computed data between the GUI and Renderer, the state of the GUI should not be modified between the end of a *tick* and the rendering (emitting events is fine).
 
@@ -100,29 +100,30 @@ WARNING: By the loose coupling design of the library, it is not recommended to a
 
 ==== Spatial event
 
-A spatial event is propagated by crossing widgets at a specific position, from the shallowest to the deepest widget, known as the down phase, then backwards, known as the up phase.
+A spatial event is propagated by crossing widgets at a specific position from the shallowest to the deepest widget, known as the down phase, then backwards, known as the up phase.
 
 The deepest widget, also known as the target, only receives the up phase event.
 
 Down phase events have the `:down` suffix to their identifier.
 
-A unique state is shared among the events to implement a capture behavior by
-checking/setting the `captured` field flag.
+A unique state is shared among the events to implement a capture behavior by checking/setting the `captured` field flag.
+
+'''
 
 .Ext GUI events
 [%autowidth.stretch]
 |===
 |Identifier |Target |Arguments |Description
 
-|focus-transition |GUI |old, new |
-|focus-update |Widget |focus (flag) |
 |pointer-press |Widget |id, x, y, button, n, state | (spatial)
-|pointer-release |Widget |id, x, y, button, n, state | (spatial)
+|pointer-release |Widget |id, x, y, button, state | (spatial)
 |pointer-click |Widget |id, x, y, button, n, state | (spatial)
 |pointer-wheel |Widget | id, x, y, wx, wy, state | (spatial)
 |pointer-move |Widget |id, x, y, dx, dy, state | (spatial)
 |pointer-enter |Widget |id |
 |pointer-leave |Widget |id |
+|focus-transition |GUI |old, new |
+|focus-update |Widget |focus (flag) |
 |key-press |GUI and focused widget |keycode, scancode, repeated |
 |key-release |GUI and focused widget |keycode, scancode |
 |text-input |GUI and focused widget |text |

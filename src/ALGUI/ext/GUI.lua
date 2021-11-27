@@ -64,7 +64,7 @@ local function dispatchSpatialEvent(widget, x, y, callback)
   return overeds
 end
 
--- A spatial event is propagated by crossing widgets at a specific position,
+-- A spatial event is propagated by crossing widgets at a specific position
 -- from the shallowest to the deepest widget, known as the down phase, then
 -- backwards, known as the up phase.
 --
